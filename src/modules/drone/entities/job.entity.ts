@@ -5,11 +5,12 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { JobType, JobStatus, Priority } from '../../../common/enums/index';
 import { Location } from '../../../common/entities/location.entity';
-import { Order } from '../../order/entities/order.entity';
-import { Drone } from './drone.entity';
+import type { Order } from '../../order/entities/order.entity';
+import type { Drone } from './drone.entity';
 
 /**
  * Job entity
@@ -32,17 +33,17 @@ export class Job {
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
 
-  @ManyToOne(() => Order)
+  @ManyToOne('Order')
   @JoinColumn({ name: 'order_id' })
-  order: Order;
+  order: Relation<Order>;
 
   // If this is a rescue job, reference to the broken drone
   @Column({ name: 'broken_drone_id', type: 'uuid', nullable: true })
   brokenDroneId: string;
 
-  @ManyToOne(() => Drone, { nullable: true })
+  @ManyToOne('Drone', { nullable: true })
   @JoinColumn({ name: 'broken_drone_id' })
-  brokenDrone: Drone;
+  brokenDrone: Relation<Drone>;
 
   // Where to pick up the package (origin for delivery, broken drone location for rescue)
   @Column(() => Location)
@@ -68,9 +69,9 @@ export class Job {
   @Column({ name: 'assigned_drone_id', type: 'uuid', nullable: true })
   assignedDroneId: string;
 
-  @ManyToOne(() => Drone, { nullable: true })
+  @ManyToOne('Drone', { nullable: true })
   @JoinColumn({ name: 'assigned_drone_id' })
-  assignedDrone: Drone;
+  assignedDrone: Relation<Drone>;
 
   // Timestamps
   @CreateDateColumn({ name: 'created_at' })

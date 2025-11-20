@@ -5,8 +5,9 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
-import { Order } from './order.entity';
+import type { Order } from './order.entity';
 import { Location } from '../../../common/entities/location.entity';
 
 /**
@@ -23,9 +24,9 @@ export class OrderModification {
   @Column({ name: 'order_id', type: 'uuid' })
   orderId: string;
 
-  @ManyToOne(() => Order, (order) => order.modificationHistory)
+  @ManyToOne('Order')
   @JoinColumn({ name: 'order_id' })
-  order: Order;
+  order: Relation<Order>;
 
   // Admin who made the modification
   @Column({ name: 'modified_by', type: 'varchar', length: 255 })

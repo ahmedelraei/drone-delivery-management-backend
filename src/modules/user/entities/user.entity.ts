@@ -1,7 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 import { UserType } from '../../../common/enums/index';
-import { RefreshToken } from '../../auth/entities/refresh-token.entity';
-import { Order } from '../../order/entities/order.entity';
 
 /**
  * User entity
@@ -36,10 +34,4 @@ export class User {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
-  // Relationships
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
-  refreshTokens: RefreshToken[];
-
-  @OneToMany(() => Order, (order) => order.user)
-  orders: Order[];
 }

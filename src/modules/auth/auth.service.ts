@@ -84,7 +84,7 @@ export class AuthService {
     let payload: RefreshJwtPayload;
     try {
       payload = this.jwtService.decode(refreshRequest.refreshToken) as RefreshJwtPayload;
-    } catch (error) {
+    } catch {
       throw new AuthException(ErrorCodes.AUTH_003, ErrorMessages[ErrorCodes.AUTH_003]);
     }
 
@@ -123,7 +123,7 @@ export class AuthService {
     // Verify JWT signature
     try {
       this.jwtService.verify(refreshRequest.refreshToken);
-    } catch (error) {
+    } catch {
       throw new AuthException(ErrorCodes.AUTH_003, ErrorMessages[ErrorCodes.AUTH_003]);
     }
 

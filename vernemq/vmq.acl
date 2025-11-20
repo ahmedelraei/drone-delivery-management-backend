@@ -1,0 +1,29 @@
+# VerneMQ Access Control List (ACL)
+# Define permissions for MQTT clients
+
+# Pattern for topic access control:
+# topic [read|write] <topic>
+# pattern [read|write] <topic-pattern>
+
+# Allow all clients to publish heartbeats to their own topic
+pattern write drones/%c/heartbeat
+
+# Allow all clients to subscribe to their own acknowledgments
+pattern read drones/%c/heartbeat/ack
+
+# Allow all clients to subscribe to their own commands
+pattern read drones/%c/commands
+
+# Allow all clients to publish status updates
+pattern write drones/%c/status
+
+# Allow all clients to read their own status acknowledgments
+pattern read drones/%c/status/ack
+
+# Allow all clients to subscribe to order location updates
+pattern read orders/+/location
+
+# Server client (backend) has full access
+user drone-delivery-backend
+topic #
+

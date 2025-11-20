@@ -34,7 +34,7 @@ export class LocationDto {
   })
   @IsNumber()
   @IsOptional()
-  altitude?: number;
+  altitude?: number | null;
 
   @ApiPropertyOptional({
     description: 'Human-readable address',
@@ -42,12 +42,12 @@ export class LocationDto {
   })
   @IsString()
   @IsOptional()
-  address?: string;
+  address?: string | null;
 
   @ApiPropertyOptional({
     description: 'Timestamp when this location was recorded',
     example: '2025-01-15T10:30:00.000Z',
   })
   @IsOptional()
-  timestamp?: Date;
+  timestamp?: Date | null;
 }

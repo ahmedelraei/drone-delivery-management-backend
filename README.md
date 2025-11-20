@@ -19,7 +19,9 @@ A comprehensive backend system for managing drone-based delivery operations, bui
 
 - Node.js >= 22.0.0
 - PostgreSQL >= 17
+- VerneMQ (MQTT Broker) - included in Docker setup
 - npm >= 10.0.0
+- Docker & Docker Compose (for database and MQTT broker)
 
 ## 🛠️ Installation
 
@@ -65,7 +67,7 @@ MQTT_CLIENT_ID=drone-delivery-backend
 5. Start PostgreSQL and MQTT broker:
 
 ```bash
-docker-compose up -d postgres mosquitto
+docker-compose up -d postgres vernemq
 ```
 
 6. Create the database (if not using Docker):
@@ -97,8 +99,9 @@ Once the application is running, visit:
 
 - **Swagger UI**: http://localhost:3000/api/docs
 - **OpenAPI JSON**: http://localhost:3000/api/docs-json
-- **MQTT Guide**: See [MQTT_INTEGRATION.md](./MQTT_INTEGRATION.md)
-- **MQTT Quick Reference**: See [MQTT_QUICK_REFERENCE.md](./MQTT_QUICK_REFERENCE.md)
+- **VerneMQ HTTP API**: http://localhost:8888/api/v1/cluster/show
+- **VerneMQ Setup Guide**: See [VERNEMQ_SETUP.md](./VERNEMQ_SETUP.md)
+- **Migration from Mosquitto**: See [MIGRATION_TO_VERNEMQ.md](./MIGRATION_TO_VERNEMQ.md)
 
 ## 🏗️ Architecture
 

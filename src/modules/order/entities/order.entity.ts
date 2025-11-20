@@ -6,14 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
+  Relation,
 } from 'typeorm';
 import { OrderStatus } from '../../../common/enums/index';
 import { Location } from '../../../common/entities/location.entity';
 import { PackageDetails } from './package-details.entity';
-import { User } from '../../user/entities/user.entity';
-import { Drone } from '../../drone/entities/drone.entity';
-import { OrderModification } from './order-modification.entity';
+import type { User } from '../../user/entities/user.entity';
+import type { Drone } from '../../drone/entities/drone.entity';
 
 /**
  * Order entity
@@ -29,9 +28,9 @@ export class Order {
   @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
-  @ManyToOne(() => User, (user) => user.orders)
+  @ManyToOne('User')
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: Relation<User>;
 
   // Current order status in the delivery lifecycle
   @Column({
@@ -57,9 +56,9 @@ export class Order {
   @Column({ name: 'assigned_drone_id', type: 'uuid', nullable: true })
   assignedDroneId: string;
 
-  @ManyToOne(() => Drone, (drone) => drone.orders, { nullable: true })
+  @ManyToOne('Drone', undefined, { nullable: true })
   @JoinColumn({ name: 'assigned_drone_id' })
-  assignedDrone: Drone;
+  assignedDrone: Relation<Drone>;
 
   // Calculated delivery cost based on distance and weight
   @Column({ type: 'decimal', precision: 10, scale: 2 })
@@ -96,8 +95,4 @@ export class Order {
   // Optional scheduled pickup time for future deliveries
   @Column({ name: 'scheduled_pickup_time', type: 'timestamp', nullable: true })
   scheduledPickupTime: Date;
-
-  // History of admin modifications to this order
-  @OneToMany(() => OrderModification, (modification) => modification.order)
-  modificationHistory: OrderModification[];
 }

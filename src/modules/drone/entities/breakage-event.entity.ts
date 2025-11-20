@@ -24,7 +24,7 @@ export class BreakageEvent {
   @Column({ name: 'drone_id', type: 'uuid' })
   droneId: string;
 
-  @ManyToOne(() => Drone, (drone) => drone.breakageHistory)
+  @ManyToOne(() => Drone, (drone) => drone.id)
   @JoinColumn({ name: 'drone_id' })
   drone: Drone;
 

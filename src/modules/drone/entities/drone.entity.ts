@@ -3,14 +3,13 @@ import {
   Column,
   PrimaryGeneratedColumn,
   CreateDateColumn,
-  OneToMany,
   OneToOne,
   JoinColumn,
+  Relation,
 } from 'typeorm';
 import { DroneStatus } from '../../../common/enums/index';
 import { Location } from '../../../common/entities/location.entity';
-import { Order } from '../../order/entities/order.entity';
-import { BreakageEvent } from './breakage-event.entity';
+import type { Order } from '../../order/entities/order.entity';
 
 /**
  * Drone entity
@@ -66,9 +65,9 @@ export class Drone {
   @Column({ name: 'current_order_id', type: 'uuid', nullable: true })
   currentOrderId: string | null;
 
-  @OneToOne(() => Order, { nullable: true })
+  @OneToOne('Order', { nullable: true })
   @JoinColumn({ name: 'current_order_id' })
-  currentOrder: Order;
+  currentOrder: Relation<Order>;
 
   // Last heartbeat timestamp - used to detect offline drones
   @Column({ name: 'last_heartbeat', type: 'timestamp', nullable: true })
@@ -88,10 +87,4 @@ export class Drone {
   @Column({ name: 'last_maintenance_at', type: 'timestamp', nullable: true })
   lastMaintenanceAt: Date;
 
-  // Relationships
-  @OneToMany(() => Order, (order) => order.assignedDrone)
-  orders: Order[];
-
-  @OneToMany(() => BreakageEvent, (breakage) => breakage.drone)
-  breakageHistory: BreakageEvent[];
 }

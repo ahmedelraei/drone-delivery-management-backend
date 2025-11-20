@@ -211,6 +211,19 @@ docker ps
 
 Check database credentials in `.env` match your setup.
 
+### MQTT Connection Error
+
+Check if VerneMQ is running:
+```bash
+docker ps | grep vernemq
+docker logs drone-delivery-vernemq
+```
+
+Test VerneMQ API:
+```bash
+curl http://localhost:8888/api/v1/cluster/show
+```
+
 ### JWT Token Expired
 
 Tokens expire after 15 minutes. Either:
