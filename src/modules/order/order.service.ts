@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Order } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
 import { CancelOrderResponseDto } from './dto/cancel-order-response.dto';
-import { OrderStatus } from '../../common/enums/index';
+import { OrderStatus, DroneStatus, JobType, JobStatus, Priority } from '../../common/enums/index';
 import { DistanceCalculator } from '../../common/utils/distance-calculator.util';
 import {
   ConflictException,
@@ -14,6 +14,8 @@ import {
   ErrorMessages,
 } from '../../common/exceptions/custom-exceptions';
 import { ConfigService } from '@nestjs/config';
+import { Drone } from '../drone/entities/drone.entity';
+import { Job } from '../drone/entities/job.entity';
 
 /**
  * Order service
@@ -22,6 +24,7 @@ import { ConfigService } from '@nestjs/config';
  */
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
   private readonly serviceAreaRadiusKm: number;
   private readonly baseCostPerKm = 2.5; // Cost calculation factor
   private readonly baseWeightCost = 5; // Base cost for weight
@@ -29,6 +32,10 @@ export class OrderService {
   constructor(
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    @InjectRepository(Drone)
+    private droneRepository: Repository<Drone>,
+    @InjectRepository(Job)
+    private jobRepository: Repository<Job>,
     private configService: ConfigService,
   ) {
     this.serviceAreaRadiusKm = this.configService.get<number>('service.areaRadiusKm') ?? 50;
@@ -91,8 +98,17 @@ export class OrderService {
     // Save to database
     const savedOrder = await this.orderRepository.save(order);
 
+    // Automatically assign a drone if available
+    await this.autoAssignDrone(savedOrder);
+
+    // Reload order to get updated assignment
+    const orderWithDrone = await this.orderRepository.findOne({
+      where: { id: savedOrder.id },
+      relations: ['assignedDrone'],
+    });
+
     // Return response DTO
-    return this.mapToResponseDto(savedOrder);
+    return this.mapToResponseDto(orderWithDrone || savedOrder);
   }
 
   /**
@@ -279,5 +295,59 @@ export class OrderService {
     }
 
     return response;
+  }
+
+  /**
+   * Automatically assign an available drone to an order
+   * Creates a job and assigns the drone atomically
+   */
+  private async autoAssignDrone(order: Order): Promise<void> {
+    try {
+      // Find an available drone (operational or idle, not assigned to any order)
+      const availableDrone = await this.droneRepository
+        .createQueryBuilder('drone')
+        .where('drone.status IN (:...statuses)', {
+          statuses: [DroneStatus.OPERATIONAL, DroneStatus.IDLE],
+        })
+        .andWhere('drone.current_order_id IS NULL')
+        .andWhere('drone.battery_level >= :minBattery', { minBattery: 20 })
+        .orderBy('drone.battery_level', 'DESC') // Prefer drones with higher battery
+        .addOrderBy('drone.total_deliveries', 'ASC') // Balance workload
+        .getOne();
+
+      if (!availableDrone) {
+        this.logger.warn(`No available drone for order ${order.id}. Order will remain pending.`);
+        return;
+      }
+
+      // Create a job for this order
+      const job = this.jobRepository.create({
+        type: JobType.DELIVERY,
+        orderId: order.id,
+        pickupLocation: order.origin,
+        priority: Priority.MEDIUM,
+        status: JobStatus.ASSIGNED,
+        assignedDroneId: availableDrone.id,
+      });
+
+      await this.jobRepository.save(job);
+
+      // Update order status and assign drone
+      order.status = OrderStatus.ASSIGNED;
+      order.assignedDroneId = availableDrone.id;
+      await this.orderRepository.save(order);
+
+      // Update drone status
+      availableDrone.status = DroneStatus.IN_TRANSIT;
+      availableDrone.currentOrderId = order.id;
+      await this.droneRepository.save(availableDrone);
+
+      this.logger.log(
+        `✅ Automatically assigned drone ${availableDrone.id} (${availableDrone.model}) to order ${order.id}`,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to auto-assign drone to order ${order.id}:`, error);
+      // Don't throw - order is still created, just not assigned
+    }
   }
 }
