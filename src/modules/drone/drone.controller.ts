@@ -19,8 +19,6 @@ import {
   UpdateOrderStatusDto,
   ReportBrokenDto,
   ReportBrokenResponseDto,
-  HeartbeatRequestDto,
-  HeartbeatResponseDto,
   CurrentOrderResponseDto,
 } from './dto/index';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -136,29 +134,11 @@ export class DroneController {
   }
 
   /**
-   * Send heartbeat with location and status
-   * POST /api/v1/drones/heartbeat
-   */
-  @Post('heartbeat')
-  @Roles(UserType.DRONE)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Send drone heartbeat with location and battery status' })
-  @ApiResponse({
-    status: 200,
-    description: 'Heartbeat processed',
-    type: HeartbeatResponseDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Drone not found',
-  })
-  async heartbeat(@Body() heartbeat: HeartbeatRequestDto): Promise<HeartbeatResponseDto> {
-    return this.droneService.processHeartbeat(heartbeat);
-  }
-
-  /**
    * Get current order details
    * GET /api/v1/drones/orders/current
+   *
+   * Note: Drone heartbeats are sent via MQTT (drones/:droneId/heartbeat)
+   * not via REST API for better real-time performance
    */
   @Get('orders/current')
   @Roles(UserType.DRONE)

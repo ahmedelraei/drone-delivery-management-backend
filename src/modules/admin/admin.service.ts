@@ -14,6 +14,9 @@ import {
   DronesFleetResponseDto,
   UpdateDroneStatusDto,
   UpdateDroneStatusResponseDto,
+  CreateDroneDto,
+  UpdateDroneDto,
+  DroneResponseDto,
 } from './dto/index';
 import { OrderStatus, DroneStatus } from '../../common/enums/index';
 import { DistanceCalculator } from '../../common/utils/distance-calculator.util';
@@ -306,6 +309,200 @@ export class AdminService {
       newStatus: drone.status,
       updatedAt: new Date(),
       updatedBy: adminName,
+    };
+  }
+
+  /**
+   * Create a new drone
+   * Registers a new drone in the system with specified capabilities
+   */
+  async createDrone(createDto: CreateDroneDto): Promise<DroneResponseDto> {
+    // Check if drone with same ID already exists
+    if (createDto.id) {
+      const existing = await this.droneRepository.findOne({
+        where: { id: createDto.id },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          ErrorCodes.DRONE_001,
+          `Drone with ID ${createDto.id} already exists`,
+        );
+      }
+    }
+
+    // Create drone entity
+    const drone = this.droneRepository.create({
+      id: createDto.id, // Will be auto-generated if not provided
+      model: createDto.model,
+      status: createDto.status || DroneStatus.IDLE,
+      currentLocation: {
+        latitude: createDto.currentLocation.latitude,
+        longitude: createDto.currentLocation.longitude,
+        altitude: createDto.currentLocation.altitude ?? 0,
+        address: createDto.currentLocation.address ?? undefined,
+        timestamp: createDto.currentLocation.timestamp || new Date(),
+      },
+      homeBase: {
+        latitude: createDto.homeBase.latitude,
+        longitude: createDto.homeBase.longitude,
+        altitude: createDto.homeBase.altitude ?? 0,
+        address: createDto.homeBase.address ?? undefined,
+        timestamp: createDto.homeBase.timestamp || new Date(),
+      },
+      batteryLevel: createDto.batteryLevel ?? 100,
+      capabilities: createDto.capabilities,
+      maxPayload: createDto.maxPayload,
+      maxRange: createDto.maxRange,
+      speed: 0,
+      currentOrderId: undefined,
+      totalDeliveries: 0,
+      totalFlightTime: 0,
+      lastHeartbeat: undefined,
+      lastMaintenanceAt: new Date(),
+    });
+
+    const savedDrone = await this.droneRepository.save(drone);
+
+    return this.mapDroneToResponse(savedDrone);
+  }
+
+  /**
+   * Get drone by ID
+   * Returns detailed information about a specific drone
+   */
+  async getDroneById(droneId: string): Promise<DroneResponseDto> {
+    const drone = await this.droneRepository.findOne({
+      where: { id: droneId },
+    });
+
+    if (!drone) {
+      throw new NotFoundException(ErrorMessages[ErrorCodes.DRONE_001]);
+    }
+
+    return this.mapDroneToResponse(drone);
+  }
+
+  /**
+   * Update drone details
+   * Allows updating drone specifications and configuration
+   */
+  async updateDrone(droneId: string, updateDto: UpdateDroneDto): Promise<DroneResponseDto> {
+    const drone = await this.droneRepository.findOne({
+      where: { id: droneId },
+    });
+
+    if (!drone) {
+      throw new NotFoundException(ErrorMessages[ErrorCodes.DRONE_001]);
+    }
+
+    // Update provided fields
+    if (updateDto.model !== undefined) {
+      drone.model = updateDto.model;
+    }
+
+    if (updateDto.status !== undefined) {
+      drone.status = updateDto.status;
+    }
+
+    if (updateDto.currentLocation) {
+      drone.currentLocation = {
+        latitude: updateDto.currentLocation.latitude,
+        longitude: updateDto.currentLocation.longitude,
+        altitude: updateDto.currentLocation.altitude ?? drone.currentLocation.altitude ?? 0,
+        address: updateDto.currentLocation.address ?? drone.currentLocation.address ?? null,
+        timestamp: updateDto.currentLocation.timestamp || new Date(),
+      };
+    }
+
+    if (updateDto.homeBase) {
+      drone.homeBase = {
+        latitude: updateDto.homeBase.latitude,
+        longitude: updateDto.homeBase.longitude,
+        altitude: updateDto.homeBase.altitude ?? drone.homeBase.altitude ?? 0,
+        address: updateDto.homeBase.address ?? drone.homeBase.address ?? null,
+        timestamp: updateDto.homeBase.timestamp || new Date(),
+      };
+    }
+
+    if (updateDto.batteryLevel !== undefined) {
+      drone.batteryLevel = updateDto.batteryLevel;
+    }
+
+    if (updateDto.capabilities !== undefined) {
+      drone.capabilities = updateDto.capabilities;
+    }
+
+    if (updateDto.maxPayload !== undefined) {
+      drone.maxPayload = updateDto.maxPayload;
+    }
+
+    if (updateDto.maxRange !== undefined) {
+      drone.maxRange = updateDto.maxRange;
+    }
+
+    const updatedDrone = await this.droneRepository.save(drone);
+
+    return this.mapDroneToResponse(updatedDrone);
+  }
+
+  /**
+   * Delete a drone
+   * Removes drone from system (only if not currently assigned to an order)
+   */
+  async deleteDrone(droneId: string): Promise<{ message: string }> {
+    const drone = await this.droneRepository.findOne({
+      where: { id: droneId },
+    });
+
+    if (!drone) {
+      throw new NotFoundException(ErrorMessages[ErrorCodes.DRONE_001]);
+    }
+
+    // Cannot delete drone that's currently on a delivery
+    if (drone.currentOrderId) {
+      throw new ConflictException(
+        ErrorCodes.DRONE_002,
+        'Cannot delete drone that is currently assigned to an order',
+      );
+    }
+
+    // Cannot delete drone that's in transit
+    if (drone.status === DroneStatus.IN_TRANSIT) {
+      throw new ConflictException(
+        ErrorCodes.DRONE_002,
+        'Cannot delete drone that is in transit',
+      );
+    }
+
+    await this.droneRepository.remove(drone);
+
+    return {
+      message: `Drone ${droneId} deleted successfully`,
+    };
+  }
+
+  /**
+   * Map drone entity to response DTO
+   */
+  private mapDroneToResponse(drone: Drone): DroneResponseDto {
+    return {
+      id: drone.id,
+      model: drone.model,
+      status: drone.status,
+      currentLocation: drone.currentLocation,
+      homeBase: drone.homeBase,
+      batteryLevel: drone.batteryLevel,
+      capabilities: drone.capabilities,
+      maxPayload: drone.maxPayload,
+      maxRange: drone.maxRange,
+      speed: drone.speed,
+      currentOrderId: drone.currentOrderId,
+      lastHeartbeat: drone.lastHeartbeat,
+      totalDeliveries: drone.totalDeliveries,
+      totalFlightTime: drone.totalFlightTime,
+      createdAt: drone.createdAt,
+      lastMaintenanceAt: drone.lastMaintenanceAt,
     };
   }
 }

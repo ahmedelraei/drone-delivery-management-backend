@@ -9,3 +9,6 @@ export * from './get-drones-query.dto';
 export * from './drones-fleet-response.dto';
 export * from './update-drone-status.dto';
 export * from './update-drone-status-response.dto';
+export * from './create-drone.dto';
+export * from './update-drone.dto';
+export * from './drone-response.dto';

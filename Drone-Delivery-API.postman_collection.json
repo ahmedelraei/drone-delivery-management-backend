@@ -486,39 +486,6 @@
 					"response": []
 				},
 				{
-					"name": "Send Heartbeat (REST)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{accessToken}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"location\": {\n    \"latitude\": 37.7880,\n    \"longitude\": -122.4070,\n    \"altitude\": 150\n  },\n  \"batteryLevel\": 85,\n  \"speed\": 45\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/drones/heartbeat",
-							"host": ["{{baseUrl}}"],
-							"path": ["drones", "heartbeat"]
-						},
-						"description": "Send heartbeat via REST (legacy).\n\n**Note:** Use MQTT for real-time heartbeats (every 30 seconds)\n\n**Returns:**\n- Current job info\n- Instructions (e.g., low battery warning)"
-					},
-					"response": []
-				},
-				{
 					"name": "Get Current Order",
 					"request": {
 						"auth": {
@@ -717,9 +684,123 @@
 						"description": "Update drone status (mark as operational or broken).\n\n**If marking as operational:**\n- Resolves open breakage events\n- Updates maintenance timestamp\n- Drone becomes available for jobs\n\n**If marking as broken:**\n- Creates breakage event\n- Same logic as drone self-report"
 					},
 					"response": []
+				},
+				{
+					"name": "Create Drone",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"model\": \"CustomDrone-X5\",\n  \"status\": \"idle\",\n  \"currentLocation\": {\n    \"latitude\": 37.7749,\n    \"longitude\": -122.4194,\n    \"altitude\": 0,\n    \"address\": \"San Francisco Distribution Center\"\n  },\n  \"homeBase\": {\n    \"latitude\": 37.7749,\n    \"longitude\": -122.4194,\n    \"altitude\": 0,\n    \"address\": \"San Francisco Distribution Center\"\n  },\n  \"batteryLevel\": 100,\n  \"capabilities\": [\"standard\", \"express\"],\n  \"maxPayload\": 12.0,\n  \"maxRange\": 65.0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones"]
+						},
+						"description": "Register a new drone in the system.\n\n**Fields:**\n- id (optional): Will be auto-generated if not provided\n- model: Drone model identifier\n- status (optional): Initial status (default: idle)\n- currentLocation: Where drone is now\n- homeBase: Where drone returns when idle\n- batteryLevel (optional): 0-100 (default: 100)\n- capabilities: Array of capabilities\n- maxPayload: Maximum weight in kg\n- maxRange: Maximum distance in km"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Drone by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones/{{droneId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones", "{{droneId}}"]
+						},
+						"description": "Get detailed information about a specific drone.\n\n**Returns:**\n- Complete drone details\n- Performance metrics\n- Current assignment\n- Last heartbeat timestamp"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Drone",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"model\": \"DX-200-Enhanced\",\n  \"batteryLevel\": 95,\n  \"capabilities\": [\"standard\", \"fragile\", \"express\"],\n  \"maxPayload\": 12.0,\n  \"maxRange\": 55.0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones/{{droneId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones", "{{droneId}}"]
+						},
+						"description": "Update drone specifications and configuration.\n\n**All fields are optional** - only provided fields will be updated.\n\n**Updatable fields:**\n- model\n- status\n- currentLocation\n- homeBase\n- batteryLevel\n- capabilities\n- maxPayload\n- maxRange"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Drone",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones/{{droneId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones", "{{droneId}}"]
+						},
+						"description": "Delete a drone from the system.\n\n**Restrictions:**\n- Cannot delete drone assigned to an order\n- Cannot delete drone in transit\n\n**Use case:** Remove decommissioned drones"
+					},
+					"response": []
 				}
 			],
-			"description": "Administrative operations.\n\n**Requires:** ADMIN role"
+			"description": "Administrative operations.\n\n**Requires:** ADMIN role\n\n**Drone CRUD:** Create, Read, Update, Delete drones"
 		},
 		{
 			"name": "Health Check",

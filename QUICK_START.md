@@ -25,13 +25,13 @@ npm --version
 npm install
 ```
 
-### 2. Start PostgreSQL with Docker (Recommended)
+### 2. Start PostgreSQL and EMQX (MQTT Broker) with Docker (Recommended)
 
 ```bash
-docker-compose up -d postgres
+docker-compose up -d
 ```
 
-Or use your local PostgreSQL installation.
+This starts both PostgreSQL database and EMQX MQTT broker. Or use your local installations.
 
 ### 3. Create Environment File
 
@@ -40,6 +40,8 @@ cp .env.example .env
 ```
 
 Edit `.env` with your settings (defaults should work with Docker setup).
+
+📖 **For detailed environment configuration**, see [ENV_SETUP_GUIDE.md](./ENV_SETUP_GUIDE.md)
 
 ### 4. Run Database Migrations
 
@@ -213,15 +215,22 @@ Check database credentials in `.env` match your setup.
 
 ### MQTT Connection Error
 
-Check if VerneMQ is running:
+Check if EMQX is running:
 ```bash
-docker ps | grep vernemq
-docker logs drone-delivery-vernemq
+docker ps | grep emqx
+docker logs drone-delivery-emqx
 ```
 
-Test VerneMQ API:
+Access EMQX Dashboard:
 ```bash
-curl http://localhost:8888/api/v1/cluster/show
+# Open in browser
+open http://localhost:18083
+# Default credentials: admin/public
+```
+
+Test EMQX API:
+```bash
+curl http://localhost:8888/api/v5/nodes
 ```
 
 ### JWT Token Expired
@@ -233,6 +242,9 @@ Tokens expire after 15 minutes. Either:
 ## Next Steps
 
 - Read the [README.md](./README.md) for complete documentation
+- Check [ENV_SETUP_GUIDE.md](./ENV_SETUP_GUIDE.md) for environment variable details
+- Review [EMQX_SETUP.md](./EMQX_SETUP.md) for MQTT broker configuration
+- Import [Postman Collection](./POSTMAN_GUIDE.md) for easy API testing
 - Check [API_EXAMPLES.md](./API_EXAMPLES.md) for API usage examples
 - Explore the Swagger UI at `http://localhost:3000/api/docs`
 - Review the code structure in `/src` directory
@@ -242,13 +254,17 @@ Tokens expire after 15 minutes. Either:
 For production deployment:
 
 1. Set `NODE_ENV=production` in `.env`
-2. Use a strong `JWT_SECRET`
-3. Disable auto-sync in TypeORM (already configured)
+2. Generate strong secrets for `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`
+3. Set `DB_SYNCHRONIZE=false` (⚠️ **CRITICAL**: never auto-sync in production)
 4. Set up proper database migrations
-5. Configure HTTPS/TLS
-6. Set up monitoring and logging
-7. Configure rate limiting
-8. Set up backup strategies
+5. Configure MQTT authentication (`MQTT_USERNAME`, `MQTT_PASSWORD`)
+6. Configure HTTPS/TLS
+7. Set up monitoring and logging
+8. Configure rate limiting
+9. Set up backup strategies
+10. Restrict CORS origins to your actual domains
+
+📖 **For detailed production configuration**, see [ENV_SETUP_GUIDE.md](./ENV_SETUP_GUIDE.md#production)
 
 ```bash
 # Build for production

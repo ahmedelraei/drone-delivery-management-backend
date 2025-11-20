@@ -15,8 +15,6 @@ import {
   UpdateOrderStatusDto,
   ReportBrokenDto,
   ReportBrokenResponseDto,
-  HeartbeatRequestDto,
-  HeartbeatResponseDto,
   CurrentOrderResponseDto,
 } from './dto/index';
 import { DroneStatus, OrderStatus, JobType, JobStatus, Priority } from '../../common/enums/index';
@@ -26,6 +24,37 @@ import {
   ErrorCodes,
   ErrorMessages,
 } from '../../common/exceptions/custom-exceptions';
+import { LocationDto } from '../../common/dto/location.dto';
+
+/**
+ * Internal interface for heartbeat data
+ * Used by MQTT gateway to process drone heartbeats
+ */
+export interface HeartbeatData {
+  droneId: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    altitude?: number;
+    address?: string;
+  };
+  batteryLevel: number;
+  speed: number;
+}
+
+/**
+ * Internal interface for heartbeat response
+ * Returned to MQTT gateway for acknowledgment
+ */
+export interface HeartbeatResponse {
+  status: DroneStatus;
+  currentJob?: {
+    orderId: string;
+    destination: LocationDto;
+    eta: Date;
+  };
+  instructions?: string;
+}
 
 /**
  * Drone service
@@ -303,10 +332,11 @@ export class DroneService {
   }
 
   /**
-   * Process drone heartbeat
+   * Process drone heartbeat (MQTT only)
    * Updates location, battery, and recalculates ETA
+   * Called by MQTT gateway when drones send heartbeat messages
    */
-  async processHeartbeat(heartbeat: HeartbeatRequestDto): Promise<HeartbeatResponseDto> {
+  async processHeartbeat(heartbeat: HeartbeatData): Promise<HeartbeatResponse> {
     const drone = await this.droneRepository.findOne({
       where: { id: heartbeat.droneId },
       relations: ['currentOrder'],
@@ -322,7 +352,7 @@ export class DroneService {
       longitude: heartbeat.location.longitude,
       altitude: heartbeat.location.altitude ?? null,
       address: heartbeat.location.address ?? null,
-      timestamp: heartbeat.location.timestamp || new Date(),
+      timestamp: new Date(),
     };
     drone.batteryLevel = heartbeat.batteryLevel;
     drone.speed = heartbeat.speed;
@@ -342,7 +372,7 @@ export class DroneService {
     await this.droneRepository.save(drone);
 
     // Build response
-    const response: HeartbeatResponseDto = {
+    const response: HeartbeatResponse = {
       status: drone.status,
     };
 

@@ -209,8 +209,9 @@ POST /api/v1/auth/revoke
 - `POST /api/v1/drones/orders/grab` - Pick up order
 - `PUT /api/v1/drones/orders/:id/status` - Update delivery status
 - `POST /api/v1/drones/report-broken` - Report malfunction
-- `POST /api/v1/drones/heartbeat` - Send location update
 - `GET /api/v1/drones/orders/current` - Get current order
+
+**Note**: Drone heartbeats are sent via MQTT (`drones/:droneId/heartbeat`) for real-time performance.
 
 ### Admin
 
