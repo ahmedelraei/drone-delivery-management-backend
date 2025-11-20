@@ -1,0 +1,804 @@
+{
+	"info": {
+		"_postman_id": "drone-delivery-api",
+		"name": "Drone Delivery Management API",
+		"description": "Complete API collection for the Drone Delivery Management System.\n\n**Features:**\n- JWT Authentication with token rotation\n- Order management (submit, track, cancel)\n- Drone operations (job assignment, heartbeat, status)\n- Admin operations (fleet management, order oversight)\n- Real-time MQTT integration\n\n**Getting Started:**\n1. Set the `baseUrl` variable to your server (default: http://localhost:3000)\n2. Run \"Generate Token\" in Authentication folder\n3. Tokens will be automatically saved to environment variables\n4. All authenticated requests will use the saved token\n\n**Tech Stack:**\n- NestJS + TypeScript\n- PostgreSQL 17\n- EMQX MQTT Broker\n- JWT Authentication",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orderId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "droneId",
+			"value": "drone-001",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Generate Token (End User)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+									"    pm.environment.set('accessToken', response.accessToken);",
+									"    pm.environment.set('refreshToken', response.refreshToken);",
+									"    console.log('✅ Tokens saved to variables');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"john_doe\",\n  \"type\": \"enduser\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/token",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "token"]
+						},
+						"description": "Generate access and refresh tokens for an end user.\n\n**User Types:**\n- `admin` - Full system access\n- `enduser` - Customer who places orders\n- `drone` - Autonomous delivery drone\n\n**Response:**\n- Access token (15 min expiration)\n- Refresh token (7 day expiration)\n- Token type: Bearer"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Token (Drone)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"drone-001\",\n  \"type\": \"drone\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/token",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "token"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Token (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"admin_user\",\n  \"type\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/token",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "token"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', response.refreshToken);",
+									"    console.log('✅ Tokens refreshed and saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token.\n\n**Token Rotation:**\n- Old refresh token is invalidated\n- New access + refresh token pair generated\n- Prevents replay attacks"
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Token (Logout)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/revoke",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "revoke"]
+						},
+						"description": "Revoke refresh token (logout).\n\nAccess token remains valid until expiration (max 15 minutes)."
+					},
+					"response": []
+				}
+			],
+			"description": "JWT authentication endpoints.\n\n**Flow:**\n1. Generate token with user credentials\n2. Use access token for API requests\n3. Refresh token when access token expires\n4. Revoke token on logout"
+		},
+		{
+			"name": "Orders (End User)",
+			"item": [
+				{
+					"name": "Submit Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('orderId', response.orderId);",
+									"    console.log('✅ Order ID saved:', response.orderId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"origin\": {\n    \"latitude\": 37.7749,\n    \"longitude\": -122.4194,\n    \"address\": \"123 Market St, San Francisco, CA 94102\"\n  },\n  \"destination\": {\n    \"latitude\": 37.8044,\n    \"longitude\": -122.2712,\n    \"address\": \"456 Broadway, Oakland, CA 94607\"\n  },\n  \"packageDetails\": {\n    \"weight\": 2.5,\n    \"length\": 30,\n    \"width\": 20,\n    \"height\": 15,\n    \"fragile\": true,\n    \"description\": \"Electronics package\",\n    \"specialHandling\": [\"temperature-sensitive\", \"upright-only\"]\n  },\n  \"scheduledPickupTime\": \"2025-11-20T15:30:00.000Z\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						},
+						"description": "Submit a new delivery order.\n\n**Business Logic:**\n- Validates service area\n- Calculates cost based on distance & weight\n- Calculates ETA using Haversine formula\n- Creates order with PENDING status"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}"]
+						},
+						"description": "Track order status and location.\n\n**Returns:**\n- Order status\n- Current drone location (if in transit)\n- Timeline of status changes\n- ETA to destination"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}"]
+						},
+						"description": "Cancel an order.\n\n**Refund Rules:**\n- PENDING: 100% refund\n- ASSIGNED: 50% refund\n- PICKED_UP or later: Cannot cancel (409 error)"
+					},
+					"response": []
+				}
+			],
+			"description": "End user order operations.\n\n**Requires:** ENDUSER role"
+		},
+		{
+			"name": "Drones",
+			"item": [
+				{
+					"name": "Reserve Job",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"capabilities\": [\"standard\", \"fragile\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/jobs/reserve",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "jobs", "reserve"]
+						},
+						"description": "Reserve a job for the drone.\n\n**Priority:**\n1. RESCUE jobs (broken drones)\n2. Regular deliveries (FIFO)\n\n**Returns:**\n- Job ID\n- Order ID\n- Pickup location\n- Job type (delivery/rescue)"
+					},
+					"response": []
+				},
+				{
+					"name": "Grab Order (Pickup)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"droneId\": \"{{droneId}}\",\n  \"location\": {\n    \"latitude\": 37.7749,\n    \"longitude\": -122.4194\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/orders/grab",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "orders", "grab"]
+						},
+						"description": "Pick up an order.\n\n**Validation:**\n- Verifies drone is within 50m of pickup location\n- Updates order status to IN_TRANSIT\n- Records pickup timestamp\n- Calculates ETA"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Delivered)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"status\": \"delivered\",\n  \"location\": {\n    \"latitude\": 37.8044,\n    \"longitude\": -122.2712\n  },\n  \"notes\": \"Delivered to reception desk\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "orders", "{{orderId}}", "status"]
+						},
+						"description": "Mark order as delivered.\n\n**Validation:**\n- Verifies drone is within 50m of destination\n- Records completion timestamp\n- Releases drone from job\n- Updates delivery count"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Failed)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"status\": \"failed\",\n  \"location\": {\n    \"latitude\": 37.7950,\n    \"longitude\": -122.3900\n  },\n  \"failureReason\": \"Customer not available after 3 attempts\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/orders/{{orderId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "orders", "{{orderId}}", "status"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Report Broken",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"location\": {\n    \"latitude\": 37.7880,\n    \"longitude\": -122.4070,\n    \"altitude\": 50\n  },\n  \"issue\": \"Motor malfunction detected - excessive vibration\",\n  \"severity\": \"high\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/report-broken",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "report-broken"]
+						},
+						"description": "Report drone malfunction.\n\n**If carrying order:**\n- Creates RESCUE job with HIGH priority\n- Updates order status to AWAITING_RESCUE\n- Another drone will pick up the package\n\n**Severity levels:**\n- low: Minor issue, can return to base\n- medium: Significant issue, immediate landing\n- high: Critical failure, emergency landing"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Heartbeat (REST)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"droneId\": \"{{droneId}}\",\n  \"location\": {\n    \"latitude\": 37.7880,\n    \"longitude\": -122.4070,\n    \"altitude\": 150\n  },\n  \"batteryLevel\": 85,\n  \"speed\": 45\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drones/heartbeat",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "heartbeat"]
+						},
+						"description": "Send heartbeat via REST (legacy).\n\n**Note:** Use MQTT for real-time heartbeats (every 30 seconds)\n\n**Returns:**\n- Current job info\n- Instructions (e.g., low battery warning)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/drones/orders/current",
+							"host": ["{{baseUrl}}"],
+							"path": ["drones", "orders", "current"]
+						},
+						"description": "Get details of current assigned order.\n\n**Returns:**\n- Order ID and status\n- Origin and destination\n- Package details\n- ETA"
+					},
+					"response": []
+				}
+			],
+			"description": "Drone operations.\n\n**Requires:** DRONE role\n\n**Note:** Use MQTT for real-time heartbeats instead of REST"
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Get Orders (Bulk)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders?status=in_transit&limit=20&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders"],
+							"query": [
+								{
+									"key": "status",
+									"value": "in_transit",
+									"description": "Filter by status (optional)"
+								},
+								{
+									"key": "startDate",
+									"value": "2025-11-01T00:00:00.000Z",
+									"description": "Start date filter (optional)",
+									"disabled": true
+								},
+								{
+									"key": "endDate",
+									"value": "2025-11-30T23:59:59.999Z",
+									"description": "End date filter (optional)",
+									"disabled": true
+								},
+								{
+									"key": "droneId",
+									"value": "drone-001",
+									"description": "Filter by drone (optional)",
+									"disabled": true
+								},
+								{
+									"key": "userId",
+									"value": "",
+									"description": "Filter by user (optional)",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Results per page (max 200)"
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Number to skip"
+								}
+							]
+						},
+						"description": "Get orders with filters and pagination.\n\n**Filters:**\n- status\n- date range\n- drone ID\n- user ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Modify Order Route",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"destination\": {\n    \"latitude\": 37.8100,\n    \"longitude\": -122.2800,\n    \"address\": \"789 New Address, Oakland, CA 94612\"\n  },\n  \"reason\": \"Customer requested address change\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/orders/{{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "orders", "{{orderId}}"]
+						},
+						"description": "Modify order route (origin or destination).\n\n**Business Logic:**\n- Cannot modify delivered/cancelled orders\n- Recalculates ETA if in transit\n- Notifies assigned drone\n- Records modification in audit trail"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Drone Fleet Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones?status=operational&limit=50&offset=0",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones"],
+							"query": [
+								{
+									"key": "status",
+									"value": "operational",
+									"description": "Filter by status (optional)"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						},
+						"description": "Get drone fleet status and statistics.\n\n**Returns:**\n- List of drones with status\n- Current location\n- Battery level\n- Current order\n- Performance metrics\n- Fleet summary (operational, broken, in_transit, idle)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Drone Status",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"operational\",\n  \"reason\": \"Maintenance completed - motor replaced\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/drones/{{droneId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "drones", "{{droneId}}", "status"]
+						},
+						"description": "Update drone status (mark as operational or broken).\n\n**If marking as operational:**\n- Resolves open breakage events\n- Updates maintenance timestamp\n- Drone becomes available for jobs\n\n**If marking as broken:**\n- Creates breakage event\n- Same logic as drone self-report"
+					},
+					"response": []
+				}
+			],
+			"description": "Administrative operations.\n\n**Requires:** ADMIN role"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Basic health check endpoint.\n\n**Public** - No authentication required"
+					},
+					"response": []
+				},
+				{
+					"name": "Readiness Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health/ready",
+							"host": ["{{baseUrl}}"],
+							"path": ["health", "ready"]
+						},
+						"description": "Readiness probe for Kubernetes/Docker.\n\n**Public** - No authentication required"
+					},
+					"response": []
+				},
+				{
+					"name": "Liveness Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health/live",
+							"host": ["{{baseUrl}}"],
+							"path": ["health", "live"]
+						},
+						"description": "Liveness probe for Kubernetes/Docker.\n\n**Public** - No authentication required"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoints for monitoring.\n\n**Public** - No authentication required"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
+

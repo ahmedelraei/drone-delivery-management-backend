@@ -19,7 +19,7 @@ A comprehensive backend system for managing drone-based delivery operations, bui
 
 - Node.js >= 22.0.0
 - PostgreSQL >= 17
-- VerneMQ (MQTT Broker) - included in Docker setup
+- EMQX (MQTT Broker) - included in Docker setup
 - npm >= 10.0.0
 - Docker & Docker Compose (for database and MQTT broker)
 
@@ -44,30 +44,35 @@ npm install
 cp .env.example .env
 ```
 
-4. Configure your `.env` file with database credentials, JWT secret, and MQTT:
+4. Configure your `.env` file with the necessary environment variables. See [`.env.example`](./.env.example) for all available options:
 
 ```env
+# Application
+NODE_ENV=development
+PORT=3000
+
 # Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
-DB_PASSWORD=your_password
-DB_NAME=drone_delivery
+DB_PASSWORD=postgres
+DB_DATABASE=drone_delivery
 
-# JWT
-JWT_SECRET=your-super-secret-key-change-in-production
-JWT_ACCESS_TOKEN_EXPIRATION=900
-JWT_REFRESH_TOKEN_EXPIRATION=604800
+# JWT Authentication
+JWT_ACCESS_SECRET=your-super-secret-access-token-key-change-this-in-production
+JWT_ACCESS_EXPIRATION=15m
+JWT_REFRESH_SECRET=your-super-secret-refresh-token-key-change-this-in-production
+JWT_REFRESH_EXPIRATION=7d
 
 # MQTT
 MQTT_BROKER_URL=mqtt://localhost:1883
 MQTT_CLIENT_ID=drone-delivery-backend
 ```
 
-5. Start PostgreSQL and MQTT broker:
+5. Start PostgreSQL and EMQX (MQTT broker):
 
 ```bash
-docker-compose up -d postgres vernemq
+docker-compose up -d
 ```
 
 6. Create the database (if not using Docker):
@@ -99,9 +104,10 @@ Once the application is running, visit:
 
 - **Swagger UI**: http://localhost:3000/api/docs
 - **OpenAPI JSON**: http://localhost:3000/api/docs-json
-- **VerneMQ HTTP API**: http://localhost:8888/api/v1/cluster/show
-- **VerneMQ Setup Guide**: See [VERNEMQ_SETUP.md](./VERNEMQ_SETUP.md)
-- **Migration from Mosquitto**: See [MIGRATION_TO_VERNEMQ.md](./MIGRATION_TO_VERNEMQ.md)
+- **EMQX Dashboard**: http://localhost:18083 (default credentials: admin/public)
+- **EMQX API**: http://localhost:8888/api/v5
+- **EMQX Setup Guide**: See [EMQX_SETUP.md](./EMQX_SETUP.md)
+- **Postman Collection**: See [POSTMAN_GUIDE.md](./POSTMAN_GUIDE.md)
 
 ## 🏗️ Architecture
 
@@ -300,28 +306,45 @@ npm run test:cov
 Key configuration options in `.env`:
 
 ```env
-# Server
+# Application
 PORT=3000
 NODE_ENV=development
+API_VERSION=v1
 
 # Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
-DB_NAME=drone_delivery
+DB_DATABASE=drone_delivery
+DB_SYNCHRONIZE=true
+DB_LOGGING=true
 
-# JWT
-JWT_SECRET=your-secret-key
-JWT_ACCESS_TOKEN_EXPIRATION=900
-JWT_REFRESH_TOKEN_EXPIRATION=604800
+# JWT Authentication
+JWT_ACCESS_SECRET=your-super-secret-access-token-key-change-this-in-production
+JWT_ACCESS_EXPIRATION=15m
+JWT_REFRESH_SECRET=your-super-secret-refresh-token-key-change-this-in-production
+JWT_REFRESH_EXPIRATION=7d
 
-# Business Rules
-SERVICE_AREA_RADIUS_KM=50
-DRONE_HEARTBEAT_TIMEOUT_SECONDS=120
-LOCATION_TOLERANCE_METERS=50
-LOW_BATTERY_THRESHOLD=20
+# MQTT
+MQTT_BROKER_URL=mqtt://localhost:1883
+MQTT_CLIENT_ID=drone-delivery-backend
+
+# CORS
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Logging
+LOG_LEVEL=info
 ```
+
+For Docker deployments, update the following:
+
+```env
+DB_HOST=postgres
+MQTT_BROKER_URL=mqtt://emqx:1883
+```
+
+See [`.env.example`](./.env.example) for all available configuration options with detailed descriptions.
 
 ## 📊 Performance Targets
 

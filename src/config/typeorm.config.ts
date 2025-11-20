@@ -12,7 +12,9 @@ export const typeOrmConfig = (): TypeOrmModuleOptions => ({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'drone_delivery',
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  // Use autoLoadEntities to automatically load entities registered via TypeOrmModule.forFeature()
+  // This avoids the need to specify file paths and prevents require() issues with ES modules
+  autoLoadEntities: true,
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: process.env.NODE_ENV === 'development', // Only auto-sync in development
   logging: process.env.NODE_ENV === 'development',
