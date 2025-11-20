@@ -24,22 +24,26 @@ A comprehensive backend system for managing drone-based delivery operations, bui
 ## 🛠️ Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd drone-delivery-management-backend
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Create environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 4. Configure your `.env` file with database credentials, JWT secret, and MQTT:
+
 ```env
 # Database
 DB_HOST=localhost
@@ -59,11 +63,13 @@ MQTT_CLIENT_ID=drone-delivery-backend
 ```
 
 5. Start PostgreSQL and MQTT broker:
+
 ```bash
 docker-compose up -d postgres mosquitto
 ```
 
 6. Create the database (if not using Docker):
+
 ```bash
 createdb drone_delivery
 ```
@@ -71,11 +77,13 @@ createdb drone_delivery
 ## 🏃 Running the Application
 
 ### Development Mode
+
 ```bash
 npm run start:dev
 ```
 
 ### Production Mode
+
 ```bash
 npm run build
 npm run start:prod
@@ -86,6 +94,7 @@ The server will start on `http://localhost:3000`
 ## 📚 API Documentation
 
 Once the application is running, visit:
+
 - **Swagger UI**: http://localhost:3000/api/docs
 - **OpenAPI JSON**: http://localhost:3000/api/docs-json
 - **MQTT Guide**: See [MQTT_INTEGRATION.md](./MQTT_INTEGRATION.md)
@@ -96,10 +105,12 @@ Once the application is running, visit:
 ### Hybrid Architecture
 
 The system uses a **hybrid approach**:
+
 - **REST API** for authentication, CRUD operations, and admin functions
 - **MQTT** for real-time drone communication and order tracking
 
 This provides:
+
 - Low latency for real-time updates (< 100ms)
 - RESTful simplicity for standard operations
 - Pub/Sub pattern for efficient 1-to-many communication
@@ -172,16 +183,19 @@ POST /api/v1/auth/revoke
 ## 📖 API Endpoints
 
 ### Authentication
+
 - `POST /api/v1/auth/token` - Generate tokens
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `POST /api/v1/auth/revoke` - Revoke token (logout)
 
 ### Orders (End Users)
+
 - `POST /api/v1/orders` - Submit new order
 - `GET /api/v1/orders/:id` - Track order
 - `DELETE /api/v1/orders/:id` - Cancel order
 
 ### Drones
+
 - `POST /api/v1/drones/jobs/reserve` - Reserve a job
 - `POST /api/v1/drones/orders/grab` - Pick up order
 - `PUT /api/v1/drones/orders/:id/status` - Update delivery status
@@ -190,6 +204,7 @@ POST /api/v1/auth/revoke
 - `GET /api/v1/drones/orders/current` - Get current order
 
 ### Admin
+
 - `GET /api/v1/admin/orders` - Get orders with filters
 - `PUT /api/v1/admin/orders/:id` - Modify order route
 - `GET /api/v1/admin/drones` - Get fleet status
@@ -225,6 +240,7 @@ npm run test:cov
 ### Hybrid Communication Flow
 
 **REST is used for:**
+
 - Authentication and token management
 - Order submission by customers
 - Job reservation by drones
@@ -233,6 +249,7 @@ npm run test:cov
 - Admin operations
 
 **MQTT is used for:**
+
 - Drone heartbeats (every 30 seconds)
 - Real-time location updates
 - Status change notifications
@@ -240,6 +257,7 @@ npm run test:cov
 - Live order tracking for customers
 
 ### Order Lifecycle
+
 1. **Pending** - Order created (REST), waiting for assignment
 2. **Assigned** - Drone assigned (REST), heading to pickup
 3. **Picked Up** - Package collected (REST)
@@ -249,11 +267,13 @@ npm run test:cov
 7. **Cancelled** - Cancelled by user
 
 ### Job Priority
+
 1. **High** - Rescue jobs (broken drone recovery)
 2. **Medium** - Regular deliveries
 3. **Low** - Non-urgent deliveries
 
 ### Broken Drone Handling
+
 1. Drone reports malfunction (via MQTT or REST)
 2. System marks drone as broken
 3. If carrying order, create rescue job
@@ -310,6 +330,7 @@ LOW_BATTERY_THRESHOLD=20
 ## 🚧 Development
 
 ### Code Style
+
 ```bash
 # Format code
 npm run format
@@ -319,6 +340,7 @@ npm run lint
 ```
 
 ### Database Migrations
+
 ```bash
 # Generate migration
 npm run migration:generate -- src/migrations/MigrationName
@@ -336,7 +358,7 @@ MIT
 
 ## 👥 Authors
 
-Development Team
+Ahmed Hatem
 
 ## 🤝 Contributing
 
@@ -349,4 +371,3 @@ Development Team
 ## 📞 Support
 
 For issues and questions, please create an issue in the repository.
-
