@@ -39,19 +39,6 @@ services:
       - vernemq_data:/vernemq/data
       - vernemq_log:/vernemq/log
 
-  # Optional: pgAdmin for database management
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: drone-delivery-pgadmin
-    restart: always
-    ports:
-      - '5050:80'
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    depends_on:
-      - postgres
-
 volumes:
   postgres_data:
   vernemq_data:
